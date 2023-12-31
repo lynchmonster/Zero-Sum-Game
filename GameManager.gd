@@ -2,21 +2,40 @@ extends Node2D
 
 var block_scene = preload("res://block.tscn")
 var blocks = [] #Array to store references to block instances
-var equation_sequence = []
+
+var equation_sequence = [] #Array to store order of blocks in equation
+@export var turn_number = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	SignalManager.block_pressed.connect(Callable(self, "_on_block_pressed"))
 
 func _on_button_pressed():
+	equation_check()
 	move_blocks_up()
 	spawn_block_row()
+	turn_number += 1
 	
-func _on_block_pressed(blockType, blockValue):
-	equation_sequence.append({"type": blockType, "value": blockValue})
-	print(blockType + " " + str(blockValue) + "Block pressed - from game manager script")
-	update_equation_text()
-
+func _on_block_pressed(block, blockType, blockValue):
+	var index_to_remove = -1
+	print("Deselected block:", block)
+	for i in range(equation_sequence.size()):
+		print("Array block:", equation_sequence[i]["block"])
+		if equation_sequence[i]["block"] == block:
+			index_to_remove = i
+			break
+			
+	if index_to_remove != -1:
+		print("Before erase:", equation_sequence)
+		equation_sequence.remove_at(index_to_remove)
+		print("After erase:", equation_sequence)
+		update_equation_text()
+		print("index to remove - it should have updated text before this")
+	else:
+		equation_sequence.append({"block": block, "type": blockType, "value": blockValue})
+		update_equation_text()
+		
+		
 func spawn_block_row():
 	for i in 6:
 		var block = block_scene.instantiate()
@@ -48,7 +67,7 @@ func spawn_block_row():
 			match block.blockValue:
 				0: label.text = "+"  # Plus
 				1: label.text = "-"  # Minus
-				2: label.text = "x"  # Multiply
+				2: label.text = "*"  # Multiply
 				3: label.text = "/"  # Divide
 		
 		label.label_settings = preload("res://LabelsforZeroSum.tres")
@@ -66,7 +85,11 @@ func move_blocks_up():
 		block.position.y -= 192
 		
 func update_equation_text():
-	var equation_string = ""
+	print("Before setting text:", $EquationText.text)
+	$EquationText.text = ""
+	print("After setting text:", $EquationText.text)
+	var equation_string = "" #need to make this equal to the value of all blocks in the equation_sequence array
+	
 	for block in equation_sequence:
 		if block["type"] == "operator":
 			match block["value"]:
@@ -80,18 +103,21 @@ func update_equation_text():
 	$EquationText.text = equation_string
 		
 		
-func deselect_block(block):
-	var index_to_remove = equation_sequence.find(block)
-	if index_to_remove != -1:
-		equation_sequence.remove(index_to_remove)
-		equation_sequence.resize(index_to_remove)
-		update_equation_text()
-
 func _unhandled_input(event):
 	if event is InputEventKey:
 		if event.pressed and event.keycode == KEY_ESCAPE:
 			get_tree().quit()
-
 	
-	
+func equation_check():
+	var equation_check_string = $EquationText.text
+	var expression = Expression.new()
+	expression.parse(equation_check_string)
+	var result = expression.execute()
+	if result == 0:
+		print("Equation equals zero!")
+		# Perform actions for zero equation
+	else:
+		print("Equation doesn't equal zero.")
+		# Handle non-zero equation
+# Handle the error appropriately, e.g., display an error message
 

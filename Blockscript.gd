@@ -11,7 +11,7 @@ func _ready():
 func _on_input_event(viewport, event, shape_idx):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		print("from block script Type:", blockType, "Value:", blockValue)
-		SignalManager.block_pressed.emit(blockType, blockValue)
+		SignalManager.block_pressed.emit(self, blockType, blockValue)
 		toggle_color()
 
 func toggle_color():
